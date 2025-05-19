@@ -16,7 +16,7 @@ pipeline {
         GIT_REPO = "https://github.com/mbashish007/ML_OPS.git"
         GIT_BRANCH = "main"
         DAG_NAME = "retail_etl"
-        DAG_FILE = "./dag/retail_etl.py"
+        DAG_FILE = "./dags/retail_etl.py"
         DAG_TARGET_DIR = "/home/m_b_ashish/forecastService/airflow_v1/dags"
     }
 
