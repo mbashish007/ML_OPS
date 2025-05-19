@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         AIRFLOW_USER = credentials('airflow-admin-user')
-        AIRFLOW_PASSWORD = credentials('airflow-admin-password')
+        // AIRFLOW_PASSWORD = credentials('airflow-admin-password')
 
         MLFLOW_TRACKING_URI = "http://192.168.116.216:5000"
         DOCKER_IMAGE_NAME = "mbashish/forecastservice"
