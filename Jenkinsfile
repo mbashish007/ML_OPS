@@ -8,7 +8,7 @@ pipeline {
         MLFLOW_TRACKING_URI = "http://192.168.116.216:5000"
         DOCKER_IMAGE_NAME = "mbashish/forecastservice"
         DOCKER_IMAGE_TAG = "v3"
-        DOCKER_HUB_CRED = credentials('docker-hub-credentials-id')
+        DOCKER_HUB_CRED = credentials('DockerHubCred')
 
         K8S_NAMESPACE = "mlops"
         ANSIBLE_PLAYBOOK = "deploy.yml"
