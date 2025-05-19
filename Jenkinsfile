@@ -13,7 +13,7 @@ pipeline {
         K8S_NAMESPACE = "mlops"
         ANSIBLE_PLAYBOOK = "deploy.yml"
 
-        GIT_REPO = "https://github.com/yourusername/mlops-repo.git"
+        GIT_REPO = "https://github.com/mbashish007/ML_OPS.git"
         GIT_BRANCH = "main"
         DAG_NAME = "retail_etl"
         DAG_FILE = "./dag/retail_etl.py"
