@@ -152,6 +152,7 @@ pipeline {
                     sh '''
                         docker run --rm \
                             -v /home/m_b_ashish/forecastService/shared:/shared \
+                            -v /home/m_b_ashish/forecastService/mlruns:/mlruns \
                             -e MLFLOW_TRACKING_URI="http://192.168.116.216:5000" \
                             trainer-image
                     '''
