@@ -90,7 +90,7 @@ pipeline {
                     echo " Triggering DAG: ${DAG_NAME}"
                     def response = sh(
                         script: """
-                            curl -u ${AIRFLOW_USER}:${AIRFLOW_PASSWORD} -X POST \
+                            curl -u ${AIRFLOW_USER_USR}:${AIRFLOW_USER_PSW} -X POST \
                               http://localhost:8090/api/v1/dags/${DAG_NAME}/dagRuns \
                               -H "Content-Type: application/json" -d '{}'
                         """,
@@ -115,7 +115,7 @@ pipeline {
                             script {
                                 def status = sh(
                                     script: """
-                                        curl -u ${AIRFLOW_USER}:${AIRFLOW_PASSWORD} -s \
+                                        curl -u ${AIRFLOW_USER_USR}:${AIRFLOW_USER_PSW} -s \
                                         http://localhost:8090/api/v1/dags/${DAG_NAME}/dagRuns/${env.DAG_RUN_ID} \
                                         | jq -r '.state'
                                     """,
