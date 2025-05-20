@@ -122,22 +122,20 @@ with mlflow.start_run() as run:
 
     ####### LightGBM ##########
     param_dist = {
-        'num_leaves': np.arange(20, 160, 20),
-        'learning_rate': [0.01, 0.05, 0.1],
+        'num_leaves': np.arange(20, 100, 20),
         'max_depth': [ 5, 7, 10],
-        'n_estimators': [50, 100, 200],
-        'min_data_in_leaf': [3, 10, 20],
+        'n_estimators': [50, 100],
+        'min_data_in_leaf': [3, 7],
         'feature_fraction': [0.6, 0.8],
         'bagging_fraction': [0.6, 0.8],
-        'lambda_l1': [0, 0.1, 0.5],
-        'lambda_l2': [0, 0.1, 0.5],
+        'lambda_l1': [0, 0.1, 0.5]
     }
 
     # Initialize the model
     lgbm_model = lgb.LGBMRegressor(verbosity=2)
 
     # Perform randomized search
-    random_search = RandomizedSearchCV(estimator=lgbm_model, param_distributions=param_dist, n_iter=10, cv=3, scoring='neg_mean_squared_error', verbose=2, n_jobs=-1, random_state=42)
+    random_search = RandomizedSearchCV(estimator=lgbm_model, param_distributions=param_dist, n_iter=3, cv=3, scoring='neg_mean_squared_error', verbose=2, n_jobs=-1, random_state=42)
     random_search.fit(X_train, y_train)
 
     # Train with early stopping
