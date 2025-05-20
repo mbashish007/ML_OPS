@@ -11,7 +11,8 @@ pipeline {
         DOCKER_HUB_CRED = credentials('DockerHubCred')
 
         K8S_NAMESPACE = "mlops"
-        ANSIBLE_PLAYBOOK = "deploy.yml"
+        ANSIBLE_PLAYBOOK = "./ansible/deploy.yml"
+        ANSIBLE_INVENTORY = "./ansible/inventory"
 
         GIT_REPO = "https://github.com/mbashish007/ML_OPS.git"
         GIT_BRANCH = "main"
@@ -209,7 +210,7 @@ pipeline {
         stage('Deploy with Ansible') {
             steps {
                 echo " Deploying to Kubernetes..."
-                sh "cd ansible && ansible-playbook -i 'inventory' ${ANSIBLE_PLAYBOOK} -e namespace=${K8S_NAMESPACE}"
+                sh "ansible-playbook -i ${ANSIBLE_INVENTORY} ${ANSIBLE_PLAYBOOK} -e namespace=${K8S_NAMESPACE}"
             }
         }
     }

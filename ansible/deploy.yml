@@ -8,6 +8,32 @@
     k8s_base_path: "k8/"  # Folder where all K8s YAMLs are stored
 
   tasks:
+    - name: Start Minikube if not already running
+      shell: |
+        if ! minikube status | grep -q "host: Running"; then
+          minikube start --driver=docker
+        fi
+      args:
+        executable: /bin/bash
+    
+    - name: Enable metrics-server if not already enabled
+      shell: |
+        if ! minikube addons list | grep -q 'metrics-server.*enabled'; then
+          minikube addons enable metrics-server
+        fi
+      args:
+        executable: /bin/bash
+
+    - name: Enable ingress if not already enabled
+      shell: |
+        if ! minikube addons list | grep -q 'ingress.*enabled'; then
+          minikube addons enable ingress
+        fi
+      args:
+        executable: /bin/bash
+
+
+
     - name: Ensure namespace exists
       command: kubectl apply -f {{ k8s_base_path }}namespace.yaml
 
