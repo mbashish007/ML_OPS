@@ -149,21 +149,48 @@ pipeline {
                     '''
 
                     echo "Running training container with volume and MLflow URI..."
-                    sh '''
+                    sh """
                         docker run --rm \
                             -v /home/m_b_ashish/forecastService/shared:/shared \
                             -v /home/m_b_ashish/forecastService/mlruns:/mlruns \
-                            -e MLFLOW_TRACKING_URI="http://192.168.116.216:5000" \
+                            -e MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
                             trainer-image
-                    '''
+                    """
                 }
+            }
+        }
+        
+        stage('Download Best Model from ML_FLOW') {
+            steps {
+                echo " Building Docker image..."
+                // Clean and recreate local shared dir
+                echo " Preparing buildshare folder..."
+
+                sh '''
+                rm -rf ./build2/buildshare || true \
+                mkdir -p ./build2/buildshare
+                '''
+                
+                sh """
+                docker build --no-cache --progress=plain -f ./build2/Dockerfile.downloader -t downloader .
+                """
+                echo "Running Downloader"
+
+                sh """ 
+                    docker run --rm  \
+                    -v ./build2/buildshare:/shared \
+                    -v /home/m_b_ashish/forecastService/mlruns:/mlruns \
+                    -e MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
+                    downloader
+                """
+                
             }
         }
 
         stage('Build Forecast API Image') {
             steps {
                 echo " Building Docker image..."
-                sh " DOCKER_BUILDKIT=1 docker buildx build --no-cache --progress=plain -f ./build2/Dockerfile -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG ."
+                sh " docker build --no-cache --progress=plain -f ./build2/Dockerfile.final -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG ."
             }
         }
 
