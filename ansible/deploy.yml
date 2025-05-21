@@ -10,8 +10,13 @@
   tasks:
     - name: Start Minikube if not already running
       shell: |
-        if ! minikube status | grep -q "host: Running"; then
+        status=$(minikube status)
+        if ! echo "$status" | grep -q "host: Running" || \
+          ! echo "$status" | grep -q "kubelet: Running" || \
+          ! echo "$status" | grep -q "apiserver: Running"; then
           minikube start --driver=docker
+        else
+          echo "Minikube already fully running"
         fi
       args:
         executable: /bin/bash

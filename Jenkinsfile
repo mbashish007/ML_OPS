@@ -28,184 +28,184 @@ pipeline {
             }
         }
 
-        stage('Check Airflow & MLflow Status') {
-            steps {
-                script {
-                    echo " Checking Airflow is reachable..."
-                    sh '''
-                        curl -f http://localhost:8090/health || {
-                            echo " Airflow is not running."
-                            exit 1
-                        }
-                    '''
+        // stage('Check Airflow & MLflow Status') {
+        //     steps {
+        //         script {
+        //             echo " Checking Airflow is reachable..."
+        //             sh '''
+        //                 curl -f http://localhost:8090/health || {
+        //                     echo " Airflow is not running."
+        //                     exit 1
+        //                 }
+        //             '''
 
-                    echo " Checking MLflow is reachable..."
-                    sh '''
-                        curl -f ${MLFLOW_TRACKING_URI} || {
-                            echo " MLflow is not running."
-                            exit 1
-                        }
-                    '''
-                }
-            }
-        }
+        //             echo " Checking MLflow is reachable..."
+        //             sh '''
+        //                 curl -f ${MLFLOW_TRACKING_URI} || {
+        //                     echo " MLflow is not running."
+        //                     exit 1
+        //                 }
+        //             '''
+        //         }
+        //     }
+        // }
 
-        stage('Ensure DAG File is Ready') {
-            steps {
-                script {
-                    def dagPath = "${DAG_TARGET_DIR}/${DAG_NAME}.py"
+        // stage('Ensure DAG File is Ready') {
+        //     steps {
+        //         script {
+        //             def dagPath = "${DAG_TARGET_DIR}/${DAG_NAME}.py"
 
-                    echo " Preparing DAG at ${dagPath}..."
-                    sh "mkdir -p ${DAG_TARGET_DIR}"
-                    sh "cp ${DAG_FILE} ${DAG_TARGET_DIR}/"
+        //             echo " Preparing DAG at ${dagPath}..."
+        //             sh "mkdir -p ${DAG_TARGET_DIR}"
+        //             sh "cp ${DAG_FILE} ${DAG_TARGET_DIR}/"
 
-                    echo " Waiting for Airflow to parse new DAG..."
-                    timeout(time: 2, unit: 'MINUTES') {
-                        retry(10) {
-                            script {
-                                def dagAvailable = sh(
-                                    script: """
-                                        curl -u ${AIRFLOW_USER_USR}:${AIRFLOW_USER_PSW} \
-                                            http://localhost:8090/api/v1/dags/${DAG_NAME} > /dev/null 2>&1
-                                        echo \$?
-                                    """,
-                                    returnStdout: true
-                                ).trim()
+        //             echo " Waiting for Airflow to parse new DAG..."
+        //             timeout(time: 2, unit: 'MINUTES') {
+        //                 retry(10) {
+        //                     script {
+        //                         def dagAvailable = sh(
+        //                             script: """
+        //                                 curl -u ${AIRFLOW_USER_USR}:${AIRFLOW_USER_PSW} \
+        //                                     http://localhost:8090/api/v1/dags/${DAG_NAME} > /dev/null 2>&1
+        //                                 echo \$?
+        //                             """,
+        //                             returnStdout: true
+        //                         ).trim()
 
-                                if (dagAvailable != "0") {
-                                    sleep 10
-                                    error "DAG not yet available, retrying..."
-                                } else {
-                                    echo " DAG parsed successfully."
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        //                         if (dagAvailable != "0") {
+        //                             sleep 10
+        //                             error "DAG not yet available, retrying..."
+        //                         } else {
+        //                             echo " DAG parsed successfully."
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('Trigger Retail ETL DAG') {
-            steps {
-                script {
-                    echo " Triggering DAG: ${DAG_NAME}"
-                    def response = sh(
-                        script: """
-                            curl -u ${AIRFLOW_USER_USR}:${AIRFLOW_USER_PSW} -X POST \
-                              http://localhost:8090/api/v1/dags/${DAG_NAME}/dagRuns \
-                              -H "Content-Type: application/json" -d '{}'
-                        """,
-                        returnStdout: true
-                    ).trim()
+        // stage('Trigger Retail ETL DAG') {
+        //     steps {
+        //         script {
+        //             echo " Triggering DAG: ${DAG_NAME}"
+        //             def response = sh(
+        //                 script: """
+        //                     curl -u ${AIRFLOW_USER_USR}:${AIRFLOW_USER_PSW} -X POST \
+        //                       http://localhost:8090/api/v1/dags/${DAG_NAME}/dagRuns \
+        //                       -H "Content-Type: application/json" -d '{}'
+        //                 """,
+        //                 returnStdout: true
+        //             ).trim()
 
-                    def dagRunId = readJSON(text: response).dag_run_id
-                    env.DAG_RUN_ID = dagRunId
-                    echo " DAG Run ID: ${env.DAG_RUN_ID}"
-                }
-            }
-        }
+        //             def dagRunId = readJSON(text: response).dag_run_id
+        //             env.DAG_RUN_ID = dagRunId
+        //             echo " DAG Run ID: ${env.DAG_RUN_ID}"
+        //         }
+        //     }
+        // }
 
-        stage('Wait for DAG Completion') {
-            steps {
-                script {
-                    def maxAttempts = 30
-                    def delaySeconds = 10
+        // stage('Wait for DAG Completion') {
+        //     steps {
+        //         script {
+        //             def maxAttempts = 30
+        //             def delaySeconds = 10
 
-                    timeout(time: 10, unit: 'MINUTES') {
-                        retry(maxAttempts) {
-                            script {
-                                def status = sh(
-                                    script: """
-                                        curl -u ${AIRFLOW_USER_USR}:${AIRFLOW_USER_PSW} -s \
-                                        http://localhost:8090/api/v1/dags/${DAG_NAME}/dagRuns/${env.DAG_RUN_ID} \
-                                        | jq -r '.state'
-                                    """,
-                                    returnStdout: true
-                                ).trim()
+        //             timeout(time: 10, unit: 'MINUTES') {
+        //                 retry(maxAttempts) {
+        //                     script {
+        //                         def status = sh(
+        //                             script: """
+        //                                 curl -u ${AIRFLOW_USER_USR}:${AIRFLOW_USER_PSW} -s \
+        //                                 http://localhost:8090/api/v1/dags/${DAG_NAME}/dagRuns/${env.DAG_RUN_ID} \
+        //                                 | jq -r '.state'
+        //                             """,
+        //                             returnStdout: true
+        //                         ).trim()
 
-                                if (status != "success") {
-                                    if (status == "failed") {
-                                        error " DAG failed."
-                                    } else {
-                                        sleep(delaySeconds)
-                                        error " DAG still running..."
-                                    }
-                                } else {
-                                    echo " DAG finished successfully."
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        //                         if (status != "success") {
+        //                             if (status == "failed") {
+        //                                 error " DAG failed."
+        //                             } else {
+        //                                 sleep(delaySeconds)
+        //                                 error " DAG still running..."
+        //                             }
+        //                         } else {
+        //                             echo " DAG finished successfully."
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        stage('Train Model and Log to MLflow') {
-            steps {
-                script {
-                    echo "Building Docker image for trainer..."
-                    sh '''
-                        cd train-model
-                        docker build -t trainer-image .
-                    '''
+        // stage('Train Model and Log to MLflow') {
+        //     steps {
+        //         script {
+        //             echo "Building Docker image for trainer..."
+        //             sh '''
+        //                 cd train-model
+        //                 docker build -t trainer-image .
+        //             '''
 
-                    echo "Running training container with volume and MLflow URI..."
-                    sh """
-                        docker run --rm \
-                            -v /home/m_b_ashish/forecastService/shared:/shared \
-                            -v /home/m_b_ashish/forecastService/mlruns:/mlruns \
-                            -e MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
-                            trainer-image
-                    """
-                }
-            }
-        }
+        //             echo "Running training container with volume and MLflow URI..."
+        //             sh """
+        //                 docker run --rm \
+        //                     -v /home/m_b_ashish/forecastService/shared:/shared \
+        //                     -v /home/m_b_ashish/forecastService/mlruns:/mlruns \
+        //                     -e MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
+        //                     trainer-image
+        //             """
+        //         }
+        //     }
+        // }
         
-        stage('Download Best Model from ML_FLOW') {
-            steps {
-                echo " Building Docker image..."
-                // Clean and recreate local shared dir
-                echo " Preparing buildshare folder..."
+        // stage('Download Best Model from ML_FLOW') {
+        //     steps {
+        //         echo " Building Docker image..."
+        //         // Clean and recreate local shared dir
+        //         echo " Preparing buildshare folder..."
 
-                sh '''
-                rm -rf ./build2/buildshare || true \
-                mkdir -p ./build2/buildshare
-                '''
+        //         sh '''
+        //         rm -rf ./build2/buildshare || true \
+        //         mkdir -p ./build2/buildshare
+        //         '''
                 
-                sh """
-                docker build --no-cache --progress=plain -f ./build2/Dockerfile.downloader -t downloader .
-                """
-                echo "Running Downloader"
+        //         sh """
+        //         docker build --no-cache --progress=plain -f ./build2/Dockerfile.downloader -t downloader .
+        //         """
+        //         echo "Running Downloader"
 
-                sh """ 
-                    docker run --rm  \
-                    -v ./build2/buildshare:/shared \
-                    -v /home/m_b_ashish/forecastService/mlruns:/mlruns \
-                    -e MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
-                    downloader
-                """
+        //         sh """ 
+        //             docker run --rm  \
+        //             -v ./build2/buildshare:/shared \
+        //             -v /home/m_b_ashish/forecastService/mlruns:/mlruns \
+        //             -e MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI} \
+        //             downloader
+        //         """
                 
-            }
-        }
+        //     }
+        // }
 
-        stage('Build Forecast API Image') {
-            steps {
-                echo " Building Docker image..."
-                sh " docker build --no-cache --progress=plain -f ./build2/Dockerfile.final -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG ."
-            }
-        }
+        // stage('Build Forecast API Image') {
+        //     steps {
+        //         echo " Building Docker image..."
+        //         sh " docker build --no-cache --progress=plain -f ./build2/Dockerfile.final -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG ."
+        //     }
+        // }
 
-        stage('Push Image to Docker Hub') {
-            steps {
+        // stage('Push Image to Docker Hub') {
+        //     steps {
                 
-                script{
-                    docker.withRegistry('', 'DockerHubCred') {
+        //         script{
+        //             docker.withRegistry('', 'DockerHubCred') {
                     
-                    sh "docker push $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG"
-                    }
-                 }
-            }
-        }
+        //             sh "docker push $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG"
+        //             }
+        //          }
+        //     }
+        // }
 
         stage('Deploy with Ansible') {
             steps {
