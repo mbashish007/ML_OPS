@@ -37,6 +37,22 @@
       args:
         executable: /bin/bash
 
+    - name: Debug execution context (whoami, pwd, ls)
+      shell: |
+        echo "=== WHOAMI ==="
+        whoami
+        echo "=== PWD ==="
+        pwd
+        echo "=== LS -R -lla ==="
+        ls -R -lla
+      args:
+        executable: /bin/bash
+      register: exec_debug_output
+
+    - name: Print execution debug output
+      debug:
+        var: exec_debug_output.stdout
+
 
 
     - name: Ensure namespace exists
