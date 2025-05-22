@@ -2,8 +2,8 @@
 
 - name: Generate filebeat.yaml with injected API key
   template:
-    src: "{{ k8s_base_path }}/filebeat/filebeat.yaml.j2"
-    dest: "{{ k8s_base_path }}/filebeat/filebeat.yaml"
+    src: "{{ k8s_base_path }}filebeat/filebeat.yaml.j2"
+    dest: "{{ k8s_base_path }}filebeat/filebeat.yaml"
     mode: 0600
 
 - name: Create ConfigMap (dry-run) and save to file
