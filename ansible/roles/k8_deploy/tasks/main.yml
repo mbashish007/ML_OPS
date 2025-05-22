@@ -92,6 +92,13 @@
   debug:
     var: ingress_result.stdout_lines
 
+- name: Restart forecast-api deployment 
+  command: kubectl rollout restart deployment/forecast-api -n {{ namespace }}
+  register: restart_result
+
+- name: Show rollout restart result
+  debug:
+    var: restart_result.stdout_lines
 
 - name: Wait for deployment rollout
   command: kubectl rollout status deployment/forecast-api -n {{ namespace }}

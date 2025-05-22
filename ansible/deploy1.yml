@@ -18,4 +18,5 @@
   roles:
     - git_clone_repo
     - k8_deploy
+    - filebeat
 

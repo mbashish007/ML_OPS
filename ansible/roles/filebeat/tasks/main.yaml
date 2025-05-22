@@ -1,0 +1,47 @@
+---
+
+- name: Generate filebeat.yaml with injected API key
+  template:
+    src: "{{ k8s_base_path }}/filebeat/filebeat.yaml.j2"
+    dest: "{{ k8s_base_path }}/filebeat/filebeat.yaml"
+    mode: 0600
+
+- name: Create ConfigMap (dry-run) and save to file
+  command: |
+    kubectl create configmap filebeat-config \
+      --from-file={{ k8s_base_path }}/filebeat/filebeat.yaml \
+      -n {{ namespace }} \
+      --dry-run=client -o yaml > {{ k8s_base_path }}/filebeat/filebeat-configmap.yaml
+  changed_when: true
+  register: create_config_result
+
+- name: Show config creation result
+  debug:
+    msg: "{{ create_config_result.stdout_lines }}"
+
+- name: Apply Filebeat ConfigMap
+  command: |
+    kubectl apply -f {{ k8s_base_path }}/filebeat/filebeat-configmap.yaml -n {{ namespace }}
+  register: apply_config_result
+
+- name: Show config apply result
+  debug:
+    var: apply_config_result.stdout_lines
+
+- name: Apply Filebeat DaemonSet
+  command: |
+    kubectl apply -f {{ k8s_base_path }}/filebeat/filebeat-daemonset.yaml -n {{ namespace }}
+  register: apply_daemonset_result
+
+- name: Show daemonset apply result
+  debug:
+    var: apply_daemonset_result.stdout_lines
+
+- name: Restart Filebeat DaemonSet
+  command: |
+    kubectl rollout restart daemonset/filebeat -n {{ namespace }}
+  register: restart_result
+
+- name: Show restart result
+  debug:
+    var: restart_result.stdout_lines
