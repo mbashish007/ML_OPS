@@ -13,7 +13,7 @@
 
 - name: Generate filebeat.yaml from template on remote
   ansible.builtin.template:
-    src: "/tmp/filebeat/filebeat.yaml.j2"
+    src: "roles/filebeat/templates/filebeat.yaml.j2"
     dest: "/tmp/filebeat/filebeat.yaml"
     mode: 0600
 
