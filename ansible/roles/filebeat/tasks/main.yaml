@@ -1,47 +1,48 @@
 ---
+- name: Ensure target directory exists
+  ansible.builtin.file:
+    path: "/tmp/filebeat"
+    state: directory
+    mode: 0700
 
-- name: Generate filebeat.yaml with injected API key
-  template:
-    src: "{{ k8s_base_path }}filebeat/filebeat.yaml.j2"
-    dest: "{{ k8s_base_path }}filebeat/filebeat.yaml"
+- name: Copy filebeat.yaml.j2 template to remote
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/filebeat/filebeat.yaml.j2"
+    dest: "/tmp/filebeat/filebeat.yaml.j2"
     mode: 0600
 
-- name: Create ConfigMap (dry-run) and save to file
-  command: |
+- name: Generate filebeat.yaml from template on remote
+  ansible.builtin.template:
+    src: "/tmp/filebeat/filebeat.yaml.j2"
+    dest: "/tmp/filebeat/filebeat.yaml"
+    mode: 0600
+
+- name: Create ConfigMap YAML on remote
+  ansible.builtin.shell: |
     kubectl create configmap filebeat-config \
-      --from-file={{ k8s_base_path }}/filebeat/filebeat.yaml \
+      --from-file=filebeat.yaml \
       -n {{ namespace }} \
-      --dry-run=client -o yaml > {{ k8s_base_path }}/filebeat/filebeat-configmap.yaml
-  changed_when: true
-  register: create_config_result
+      --dry-run=client -o yaml > filebeat-configmap.yaml
+  args:
+    chdir: /tmp/filebeat/
 
-- name: Show config creation result
-  debug:
-    msg: "{{ create_config_result.stdout_lines }}"
+- name: Apply ConfigMap on remote
+  kubernetes.core.k8s:
+    src: /tmp/filebeat/filebeat-configmap.yaml
+    namespace: "{{ namespace }}"
+    kubeconfig: ~/.kube/config
 
-- name: Apply Filebeat ConfigMap
-  command: |
-    kubectl apply -f {{ k8s_base_path }}/filebeat/filebeat-configmap.yaml -n {{ namespace }}
-  register: apply_config_result
-
-- name: Show config apply result
-  debug:
-    var: apply_config_result.stdout_lines
-
-- name: Apply Filebeat DaemonSet
-  command: |
-    kubectl apply -f {{ k8s_base_path }}/filebeat/filebeat-daemonset.yaml -n {{ namespace }}
-  register: apply_daemonset_result
-
-- name: Show daemonset apply result
-  debug:
-    var: apply_daemonset_result.stdout_lines
+- name: Apply DaemonSet on remote
+  kubernetes.core.k8s:
+    src: "{{ k8s_base_path }}/filebeat/filebeat-daemonset.yaml"
+    namespace: "{{ namespace }}"
+    kubeconfig: ~/.kube/config
 
 - name: Restart Filebeat DaemonSet
-  command: |
-    kubectl rollout restart daemonset/filebeat -n {{ namespace }}
-  register: restart_result
-
-- name: Show restart result
-  debug:
-    var: restart_result.stdout_lines
+  kubernetes.core.k8s:
+    kind: DaemonSet
+    api_version: apps/v1
+    name: filebeat
+    namespace: "{{ namespace }}"
+    state: restarted
+    kubeconfig: ~/.kube/config
