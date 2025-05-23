@@ -1,2 +1,3 @@
 /build2/buildshare
 /k8/filebeat/filebeat-configmap.yaml
+ansible/ansible_deploy

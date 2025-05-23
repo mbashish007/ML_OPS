@@ -7,7 +7,7 @@
 
 - name: Copy filebeat.yaml.j2 template to remote
   ansible.builtin.copy:
-    src: "{{ playbook_dir }}/filebeat/filebeat.yaml.j2"
+    src: "{{ playbook_dir }}/roles/filebeat/templates/filebeat.yaml.j2"
     dest: "/tmp/filebeat/filebeat.yaml.j2"
     mode: 0600
 
@@ -39,10 +39,12 @@
     kubeconfig: ~/.kube/config
 
 - name: Restart Filebeat DaemonSet
-  kubernetes.core.k8s:
-    kind: DaemonSet
-    api_version: apps/v1
-    name: filebeat
-    namespace: "{{ namespace }}"
-    state: restarted
-    kubeconfig: ~/.kube/config
+  ansible.builtin.shell: |
+    kubectl rollout restart daemonset/filebeat -n {{ namespace }}
+  args:
+    executable: /bin/bash
+  register: restart_result
+
+- name: Show restart result
+  debug:
+    msg: "{{ restart_result.stdout_lines }}"
